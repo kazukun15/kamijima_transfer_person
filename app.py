@@ -87,9 +87,9 @@ st.markdown(
     各職員がどこからどこへ課名変更（異動）したかを追跡し、
     CSVに変換したデータを使って分析を実施します。
 
-    ※ 各PDFには「課名」カラムが存在し、職員の氏名は
-    「部長」「課長・主幹」「課長補佐」「係長・相当職」
-    「職員」「単労職」「会計年度職員」「臨時職員」のいずれかのカラムに記載されています。
+    ※ 各PDFには「課名」カラムが存在し、職員の氏名は「部長」「課長・主幹」
+    「課長補佐」「係長・相当職」「職員」「単労職」「会計年度職員」「臨時職員」
+    のいずれかのカラムに記載されています。
     """
 )
 
@@ -101,13 +101,14 @@ curr_file = st.sidebar.file_uploader("現年度のPDFを選択", type="pdf", key
 
 if prev_file and curr_file:
     st.info("PDFファイルを読み込み中...")
+    # PDFからデータ抽出
     df_prev_raw = extract_data_from_pdf(prev_file)
     curr_file.seek(0)
     df_curr_raw = extract_data_from_pdf(curr_file)
     
-    # データ表示前にすべての列を文字列型に変換
-    df_prev_raw = df_prev_raw.astype(str)
-    df_curr_raw = df_curr_raw.astype(str)
+    # すべてのセルを文字列に変換（applymap を使用）
+    df_prev_raw = df_prev_raw.applymap(lambda x: "" if pd.isna(x) else str(x))
+    df_curr_raw = df_curr_raw.applymap(lambda x: "" if pd.isna(x) else str(x))
     
     st.subheader("前年分データ（抽出結果）")
     st.dataframe(df_prev_raw)
@@ -118,9 +119,9 @@ if prev_file and curr_file:
     df_prev_transformed = transform_extracted_data(df_prev_raw)
     df_curr_transformed = transform_extracted_data(df_curr_raw)
     
-    # 変換後も文字列型にしておく
-    df_prev_transformed = df_prev_transformed.astype(str)
-    df_curr_transformed = df_curr_transformed.astype(str)
+    # 変換後も全セルを文字列に変換
+    df_prev_transformed = df_prev_transformed.applymap(lambda x: "" if pd.isna(x) else str(x))
+    df_curr_transformed = df_curr_transformed.applymap(lambda x: "" if pd.isna(x) else str(x))
     
     st.subheader("前年分データ（変換後）")
     st.dataframe(df_prev_transformed)
