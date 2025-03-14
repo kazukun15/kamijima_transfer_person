@@ -3,6 +3,7 @@ import pandas as pd
 import pdfplumber
 import requests
 import json
+import os  # ファイルの存在確認に使用
 
 # st.secretsからGemini APIキーを取得
 GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
@@ -133,9 +134,17 @@ if uploaded_prev and uploaded_curr:
     else:
         st.info("異動差分は検出されませんでした。")
     
-    st.markdown("### アプリ全体の構成図")
-    st.image("app_diagram.png", caption="アプリ全体の構成とデータフロー")
-    st.markdown("### Gemini 正規化フロー")
-    st.image("gemini_normalization_diagram.png", caption="PDFデータ正規化の全体フロー")
+    # 画像ファイルの存在チェックを追加
+    if os.path.exists("app_diagram.png"):
+        st.markdown("### アプリ全体の構成図")
+        st.image("app_diagram.png", caption="アプリ全体の構成とデータフロー")
+    else:
+        st.warning("アプリ全体の構成図 (app_diagram.png) が見つかりません。")
+
+    if os.path.exists("gemini_normalization_diagram.png"):
+        st.markdown("### Gemini 正規化フロー")
+        st.image("gemini_normalization_diagram.png", caption="PDFデータ正規化の全体フロー")
+    else:
+        st.warning("Gemini 正規化フロー図 (gemini_normalization_diagram.png) が見つかりません。")
 else:
     st.warning("前年度と今年度のPDFファイルをサイドバーからアップロードしてください。")
