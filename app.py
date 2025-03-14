@@ -19,34 +19,34 @@ def extract_data_from_pdf(pdf_file):
                         records.append(dict(zip(header, row)))
     return pd.DataFrame(records)
 
-# --- 抽出されたデータから「部署」と各役職のセルにある氏名を統合する関数 ---
+# --- 抽出されたデータから「課名」と各役職のセルにある氏名を統合する関数 ---
 def transform_extracted_data(df):
     # 対象となる役職カラムのリスト（必要に応じて調整してください）
     roles = ["部長", "課長・主幹", "課長補佐", "係長・相当職", "職員", "単労職", "会計年度職員", "臨時職員"]
-    # 「部署」カラムの存在チェック
-    if "部署" not in df.columns:
-        st.error("部署カラムが存在しません。")
+    # 「課名」カラムの存在チェック
+    if "課名" not in df.columns:
+        st.error("課名カラムが存在しません。")
         return pd.DataFrame()
     # melt処理により、各役職カラムから「氏名」を抽出し、1列に統合
-    df_melt = df.melt(id_vars=["部署"], value_vars=roles, var_name="役職", value_name="氏名")
+    df_melt = df.melt(id_vars=["課名"], value_vars=roles, var_name="役職", value_name="氏名")
     # 氏名が空または欠損している行を除去
     df_melt = df_melt[df_melt["氏名"].notna() & (df_melt["氏名"].str.strip() != "")]
     return df_melt
 
-# --- 前年度と現年度の変換済みデータから、異動（部署変更）を追跡する関数 ---
+# --- 前年分と現年度の変換済みデータから、異動（課名変更）を追跡する関数 ---
 def track_transfers(df_prev, df_curr):
     # 「氏名」をキーにマージ（各ファイルで同一の氏名で登録されていることが前提）
     if "氏名" not in df_prev.columns or "氏名" not in df_curr.columns:
         st.error("氏名カラムが不足しています。")
         return pd.DataFrame()
     df_merged = pd.merge(df_prev, df_curr, on="氏名", suffixes=('_prev', '_curr'))
-    # マージ後の「部署」カラムの存在確認
-    if "部署_prev" not in df_merged.columns or "部署_curr" not in df_merged.columns:
-        st.error("部署カラムが不足しています。")
+    # マージ後の「課名」カラムの存在確認
+    if "課名_prev" not in df_merged.columns or "課名_curr" not in df_merged.columns:
+        st.error("課名カラムが不足しています。")
         return pd.DataFrame()
-    # 前年度と現年度で部署が異なるレコード（＝異動している）を抽出
-    df_transfers = df_merged[df_merged["部署_prev"] != df_merged["部署_curr"]]
-    return df_transfers[["氏名", "部署_prev", "部署_curr"]].reset_index(drop=True)
+    # 前年と現年度で課名が異なるレコード（＝異動している）を抽出
+    df_transfers = df_merged[df_merged["課名_prev"] != df_merged["課名_curr"]]
+    return df_transfers[["氏名", "課名_prev", "課名_curr"]].reset_index(drop=True)
 
 # --- Streamlit アプリのUI ---
 st.set_page_config(page_title="職員異動追跡アプリ", layout="wide")
@@ -54,9 +54,9 @@ st.title("職員異動追跡アプリ")
 st.markdown(
     """
     このアプリは、前年分と現年度のPDFファイルをそれぞれアップロードすることで、
-    各職員がどこからどこへ部署異動したかを追跡します。
+    各職員がどこからどこへ課名変更（異動）したかを追跡します。
 
-    ※ 各PDFには「部署」カラムが存在し、職員の氏名は
+    ※ 各PDFには「課名」カラムが存在し、職員の氏名は
     「部長」「課長・主幹」「課長補佐」「係長・相当職」
     「職員」「単労職」「会計年度職員」「臨時職員」のいずれかのカラムに記載されています。
     """
@@ -93,7 +93,7 @@ if prev_file and curr_file:
     df_transfers = track_transfers(df_prev_transformed, df_curr_transformed)
     
     if df_transfers.empty:
-        st.info("部署異動が検出されませんでした。")
+        st.info("課名異動が検出されませんでした。")
     else:
         st.subheader("【異動追跡結果】")
         st.dataframe(df_transfers)
